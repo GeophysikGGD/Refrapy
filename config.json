@@ -3,8 +3,8 @@
   "dx": "0.5",
   "cellseize": "5",
   "quality": "32",
-  "lamda": "100",
-  "zweight": "1",
+  "lamda": "200",
+  "zweight": "0.5",
   "vtop": "300",
   "vbottom": "3000",
   "minvel": "200",
@@ -13,5 +13,6 @@
   "maxiter": "20",
   "gridx": "1000",
   "gridy": "1000",
-  "nlevels": "20"
+  "nlevels": "20",
+  "smoothmodel": "1"
 }
