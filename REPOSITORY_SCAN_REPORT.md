@@ -176,7 +176,7 @@ else:
 The fork is meant for internal use, we do want to share these improvements with the community.
 ```
 
-**Issue:** Missing "but" or similar connector word. Should likely be:
+**Issue:** Missing "but" connector word. Should be:
 "The fork is meant for internal use, but we do want to share these improvements with the community."
 
 **Severity:** Low - Documentation clarity issue
@@ -194,9 +194,12 @@ warnings.filterwarnings('ignore')
 
 **Problem:** Blanket suppression of all warnings can hide important issues
 
-**Recommendation:** Be specific about which warnings to suppress:
+**Recommendation:** Be specific about which warnings to suppress, or better yet, address the root causes:
 ```python
-warnings.filterwarnings('ignore', category=DeprecationWarning)
+# Option 1: Suppress specific warnings from specific modules
+warnings.filterwarnings('ignore', category=FutureWarning, module='matplotlib')
+
+# Option 2: Better - address the root cause of warnings instead of suppressing
 ```
 
 **Severity:** Medium - May hide important warnings about deprecated APIs
