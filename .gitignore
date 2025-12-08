@@ -1,1 +1,4 @@
 TravelTimeManager/
+__pycache__/
+*.pyc
+*.pyo

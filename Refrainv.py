@@ -12,7 +12,7 @@ from matplotlib.lines import Line2D
 from matplotlib.colors import is_color_like
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-from tkinter import Tk, ttk, Toplevel, Frame, Button, Menu,Label, filedialog, messagebox, PhotoImage, simpledialog, Entry, Canvas, Scrollbar, StringVar
+from tkinter import Tk, ttk, Toplevel, Frame, Button, Menu,Label, filedialog, messagebox, PhotoImage, simpledialog, Entry, Canvas, Scrollbar, StringVar, Checkbutton, IntVar
 from os import path, makedirs, getcwd, name
 from obspy import read
 from obspy.signal.filter import lowpass, highpass
@@ -328,6 +328,8 @@ class Refrainv(Tk):
                             paraMaxCellSize=paraMaxCellSize,
                             quality=paraQuality
                         )
+                        # Use smooth model setting from config
+                        smoothModel = int(self.tomostandards.get("smoothmodel", "1"))
                         invert_kwargs = {
                             'data': self.data_pg,
                             'mesh': self.tomoMesh,
@@ -339,7 +341,8 @@ class Refrainv(Tk):
                             'vBottom': float(self.tomostandards["vbottom"]),
                             'maxIter': int(self.tomostandards["maxiter"]),
                             'limits': [float(self.tomostandards["minvel"]), float(self.tomostandards["maxvel"])],
-                            'secNodes': int(self.tomostandards["secnodes"])
+                            'secNodes': int(self.tomostandards["secnodes"]),
+                            'blockyModel': not bool(smoothModel)  # Prevent channeling by encouraging smooth models
                         }
                         # Optionally add start model logic here
 
@@ -1659,6 +1662,7 @@ class Refrainv(Tk):
                 xngrid = xngrid_entry.get()
                 yngrid = yngrid_entry.get()
                 nlevels = nlevels_entry.get()
+                smoothModel = smoothModel_var.get()
                 
                 # Prepare inversion parameters
                 invert_kwargs = {
@@ -1672,7 +1676,8 @@ class Refrainv(Tk):
                     'vBottom': vBottom,
                     'maxIter': maxIter,
                     'limits': [minVelLimit, maxVelLimit],
-                    'secNodes': secNodes
+                    'secNodes': secNodes,
+                    'blockyModel': not bool(smoothModel)  # Prevent channeling by encouraging smooth models
                 }
                 
                 # Check for start models (VTK or .vel file)
@@ -1729,6 +1734,7 @@ class Refrainv(Tk):
                 self.tomostandards["gridx"] = xngrid
                 self.tomostandards["gridy"] = yngrid
                 self.tomostandards["nlevels"] = nlevels
+                self.tomostandards["smoothmodel"] = str(smoothModel)
                 
                 self.parameters_tomo = [maxDepth, paraDX, paraMaxCellSize, lam, zWeigh, vTop, vBottom, 
                                        minVelLimit, maxVelLimit, secNodes, maxIter,
@@ -1879,8 +1885,8 @@ class Refrainv(Tk):
                     "dx": "0.33",
                     "cellseize": str(3 * (self.gx[1] - self.gx[0])),
                     "quality": "32",
-                    "lamda": "100",
-                    "zweight": "0.2",
+                    "lamda": "200",
+                    "zweight": "0.5",
                     "vtop": "300",
                     "vbottom": "3000",
                     "minvel": "100",
@@ -1889,7 +1895,8 @@ class Refrainv(Tk):
                     "maxiter": "10",
                     "gridx": "1000",
                     "gridy": "1000",
-                    "nlevels": "20"
+                    "nlevels": "20",
+                    "smoothmodel": "1"
                                         }
             
             # --- Mesh Options Section ---
@@ -1965,59 +1972,66 @@ class Refrainv(Tk):
             maxIter_entry.grid(row=14, column=1, pady=3, sticky="W")
             maxIter_entry.insert(0, self.tomostandards["maxiter"])
 
+            # Smooth model option (anti-channeling)
+            smoothModel_var = IntVar(value=int(self.tomostandards.get("smoothmodel", "1")))
+            smoothModel_check = Checkbutton(scrollable_frame, text="Enable smooth model (prevents channeling)", 
+                                           variable=smoothModel_var, bg="#F0F0F0")
+            smoothModel_check.grid(row=15, column=0, columnspan=2, pady=3, sticky="W")
+
             # --- Start Model Section ---
             start_section = Label(scrollable_frame, text="Start Model", font=("Arial", 12, "bold"), bg="#F0F0F0")
-            start_section.grid(row=15, column=0, columnspan=2, pady=(15, 5), sticky="EW")
+            start_section.grid(row=16, column=0, columnspan=2, pady=(15, 5), sticky="EW")
 
             startmodel_label = Label(scrollable_frame, text="No start model loaded", fg="gray", bg="#F0F0F0")
-            startmodel_label.grid(row=16, column=0, columnspan=2, pady=2, sticky="EW")
+            startmodel_label.grid(row=17, column=0, columnspan=2, pady=2, sticky="EW")
 
-            Button(scrollable_frame, text="Load VTK Start Model", command=loadStartModel, bg="#e0e0e0").grid(row=17, column=0, pady=2, sticky="EW")
-            Button(scrollable_frame, text="Clear Start Model", command=clearStartModel, bg="#e0e0e0").grid(row=17, column=1, pady=2, sticky="EW")
-            Button(scrollable_frame, text="Show Start Model", command=showStartModel, bg="#e0e0e0").grid(row=18, column=0, columnspan=2, pady=2, sticky="EW")
+            Button(scrollable_frame, text="Load VTK Start Model", command=loadStartModel, bg="#e0e0e0").grid(row=18, column=0, pady=2, sticky="EW")
+            Button(scrollable_frame, text="Clear Start Model", command=clearStartModel, bg="#e0e0e0").grid(row=18, column=1, pady=2, sticky="EW")
+            Button(scrollable_frame, text="Show Start Model", command=showStartModel, bg="#e0e0e0").grid(row=19, column=0, columnspan=2, pady=2, sticky="EW")
 
             # --- Velocity Model (.vel) Section ---
             vel_section = Label(scrollable_frame, text="Velocity Model (.vel file)", font=("Arial", 12, "bold"), bg="#F0F0F0")
-            vel_section.grid(row=19, column=0, columnspan=2, pady=(15, 5), sticky="EW")
+            vel_section.grid(row=20, column=0, columnspan=2, pady=(15, 5), sticky="EW")
 
             velmodel_label = Label(scrollable_frame, text="No velocity model loaded", fg="gray", bg="#F0F0F0")
-            velmodel_label.grid(row=20, column=0, columnspan=2, pady=2, sticky="EW")
+            velmodel_label.grid(row=21, column=0, columnspan=2, pady=2, sticky="EW")
 
-            Button(scrollable_frame, text="Load .vel Model", command=loadVelModel, bg="#e0e0e0").grid(row=21, column=0, pady=2, sticky="EW")
-            Button(scrollable_frame, text="Clear .vel Model", command=clearVelModel, bg="#e0e0e0").grid(row=21, column=1, pady=2, sticky="EW")
-            Button(scrollable_frame, text="Show .vel Model", command=showVelModel, bg="#e0e0e0").grid(row=22, column=0, columnspan=2, pady=2, sticky="EW")
+            Button(scrollable_frame, text="Load .vel Model", command=loadVelModel, bg="#e0e0e0").grid(row=22, column=0, pady=2, sticky="EW")
+            Button(scrollable_frame, text="Clear .vel Model", command=clearVelModel, bg="#e0e0e0").grid(row=22, column=1, pady=2, sticky="EW")
+            Button(scrollable_frame, text="Show .vel Model", command=showVelModel, bg="#e0e0e0").grid(row=23, column=0, columnspan=2, pady=2, sticky="EW")
 
             # --- Contour Plot Options Section ---
             contour_section = Label(scrollable_frame, text="Contour Plot Options", font=("Arial", 12, "bold"), bg="#F0F0F0")
-            contour_section.grid(row=23, column=0, columnspan=2, pady=(15, 5), sticky="EW")
+            contour_section.grid(row=24, column=0, columnspan=2, pady=(15, 5), sticky="EW")
 
-            Label(scrollable_frame, text="# of nodes for gridding (x)", bg="#F0F0F0").grid(row=24, column=0, pady=3, sticky="E")
+            Label(scrollable_frame, text="# of nodes for gridding (x)", bg="#F0F0F0").grid(row=25, column=0, pady=3, sticky="E")
             xngrid_entry = Entry(scrollable_frame, width=10)
-            xngrid_entry.grid(row=24, column=1, pady=3, sticky="W")
+            xngrid_entry.grid(row=25, column=1, pady=3, sticky="W")
             xngrid_entry.insert(0, self.tomostandards["gridx"])
 
-            Label(scrollable_frame, text="# of nodes for gridding (y)", bg="#F0F0F0").grid(row=25, column=0, pady=3, sticky="E")
+            Label(scrollable_frame, text="# of nodes for gridding (y)", bg="#F0F0F0").grid(row=26, column=0, pady=3, sticky="E")
             yngrid_entry = Entry(scrollable_frame, width=10)
-            yngrid_entry.grid(row=25, column=1, pady=3, sticky="W")
+            yngrid_entry.grid(row=26, column=1, pady=3, sticky="W")
             yngrid_entry.insert(0, self.tomostandards["gridy"])
 
-            Label(scrollable_frame, text="# of contour levels", bg="#F0F0F0").grid(row=26, column=0, pady=3, sticky="E")
+            Label(scrollable_frame, text="# of contour levels", bg="#F0F0F0").grid(row=27, column=0, pady=3, sticky="E")
             nlevels_entry = Entry(scrollable_frame, width=10)
-            nlevels_entry.grid(row=26, column=1, pady=3, sticky="W")
+            nlevels_entry.grid(row=27, column=1, pady=3, sticky="W")
             nlevels_entry.insert(0, self.tomostandards["nlevels"])
 
             # --- Action Buttons Section ---
-            Button(scrollable_frame, text="Run Inversion", command=runInversion, bg="#228B22", fg="white", font=("Arial", 11, "bold")).grid(row=27, column=0, columnspan=2, pady=(15, 5), sticky="EW")
-            Button(scrollable_frame, text="Batch Inversion", command=self.batchTomography, bg="#0055aa", fg="white", font=("Arial", 11, "bold")).grid(row=28, column=0, columnspan=2, pady=5, sticky="EW")
+            Button(scrollable_frame, text="Run Inversion", command=runInversion, bg="#228B22", fg="white", font=("Arial", 11, "bold")).grid(row=28, column=0, columnspan=2, pady=(15, 5), sticky="EW")
+            Button(scrollable_frame, text="Batch Inversion", command=self.batchTomography, bg="#0055aa", fg="white", font=("Arial", 11, "bold")).grid(row=29, column=0, columnspan=2, pady=5, sticky="EW")
 
             # --- Info Section ---
             info_text = (
                 "Tips:\n"
                 "- Use 'View mesh' to preview before running inversion.\n"
                 "- Start model (.vtk) or velocity model (.vel) can be used as initial guess.\n"
-                "- Batch inversion lets you explore parameter ranges automatically."
+                "- Batch inversion lets you explore parameter ranges automatically.\n"
+                "- Enable 'smooth model' to prevent ray channeling and focusing issues."
             )
-            Label(scrollable_frame, text=info_text, font=("Arial", 9), fg="#444", bg="#F0F0F0", justify="left", wraplength=340).grid(row=29, column=0, columnspan=2, pady=(10, 5), sticky="EW")
+            Label(scrollable_frame, text=info_text, font=("Arial", 9), fg="#444", bg="#F0F0F0", justify="left", wraplength=340).grid(row=30, column=0, columnspan=2, pady=(10, 5), sticky="EW")
 
             tomoWindow.tkraise()
 
