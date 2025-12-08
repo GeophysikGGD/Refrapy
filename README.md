@@ -84,6 +84,18 @@ The Refrapick program is used for basic waveform processing and for first breaks
 
 The Refrainv program is used to run a time-terms and a traveltimes tomography inversion. The latter is powered by pyGIMLi (https://www.pygimli.org/). The program presents an individual frame for each inversion method, where each frame has three main panels: the traveltime plotting panel (upper left), used to view and interact with the observed data; the fit and editing panel (upper right), used to edit traveltimes, by clicking on data points and dragging them up or down, and to view the graphical fit between the observed and calculated traveltimes; and the velocity model plotting panel (bottom). 
 
+### Preventing Ray Channeling and Focusing
+
+Ray channeling and focusing are common issues in seismic tomography where rays concentrate in narrow paths, creating unrealistic velocity structures. To address these problems, Refrainv now includes:
+
+- **Smooth Model Mode**: Enable the "Enable smooth model (prevents channeling)" checkbox in the inversion settings to encourage smooth velocity transitions and prevent sharp boundaries that lead to ray focusing.
+- **Improved Default Parameters**: The default regularization parameters have been optimized to reduce channeling effects:
+  - Smoothing parameter (lambda) increased from 100 to 200 for better regularization
+  - Vertical/horizontal smoothing ratio (zweight) adjusted from 1.0 to 0.5 for more balanced smoothing
+- **Start Models**: Using velocity models (.vel files) or previous inversion results (.vtk files) as starting models helps constrain the solution and reduce artifacts.
+
+These improvements help produce more geologically realistic velocity models with better ray coverage distribution.
+
 ### Video tutorial - Calculate velocity models from data inversion
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/rOJjxoc2cbU/0.jpg)](https://www.youtube.com/watch?v=rOJjxoc2cbU)
 

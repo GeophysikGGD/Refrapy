@@ -328,6 +328,8 @@ class Refrainv(Tk):
                             paraMaxCellSize=paraMaxCellSize,
                             quality=paraQuality
                         )
+                        # Use smooth model setting from config
+                        smoothModel = int(self.tomostandards.get("smoothmodel", "1"))
                         invert_kwargs = {
                             'data': self.data_pg,
                             'mesh': self.tomoMesh,
@@ -340,7 +342,7 @@ class Refrainv(Tk):
                             'maxIter': int(self.tomostandards["maxiter"]),
                             'limits': [float(self.tomostandards["minvel"]), float(self.tomostandards["maxvel"])],
                             'secNodes': int(self.tomostandards["secnodes"]),
-                            'blockyModel': False  # Prevent channeling by encouraging smooth models
+                            'blockyModel': not bool(smoothModel)  # Prevent channeling by encouraging smooth models
                         }
                         # Optionally add start model logic here
 
