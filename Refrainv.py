@@ -33,6 +33,7 @@ import pandas as pd
 import json 
 #own modules
 from dtreader import dtreader
+from gpu_utils import gpu_config, is_cuda_available, get_cuda_info
 
 
 class Refrainv(Tk):
@@ -85,6 +86,11 @@ class Refrainv(Tk):
         viz_menu.add_command(label="Show Velocity Mesh", command=self.showPgResult)
         viz_menu.add_command(label="3D View", command=self.build3d)
         menubar.add_cascade(label="Visualization", menu=viz_menu)
+
+        # Settings menu
+        settings_menu = Menu(menubar, tearoff=0)
+        settings_menu.add_command(label="GPU Settings", command=self.showGPUSettings)
+        menubar.add_cascade(label="Settings", menu=settings_menu)
 
         # Help menu
         help_menu = Menu(menubar, tearoff=0)
@@ -308,6 +314,12 @@ class Refrainv(Tk):
             zw_values = np.arange(zw_min, zw_max + zw_step, zw_step)
 
             total_runs = len(lam_values) * len(cell_values) * len(zw_values)
+            
+            # Notify user about GPU usage in batch mode
+            gpu_status = "GPU acceleration is ENABLED" if self.gpu_enabled else "GPU acceleration is DISABLED"
+            if not messagebox.askyesno("Refrainv", f"Starting batch inversion with {total_runs} runs.\n\n{gpu_status}\n\nDo you want to continue?"):
+                return
+            
             progress = tqdm(total=total_runs, desc="Batch inversion")
 
             # Collect results for export
@@ -411,6 +423,102 @@ class Refrainv(Tk):
         """,font=("Arial", 11)).pack()
         helpWindow.tkraise()
 
+    def showGPUSettings(self):
+        """Show GPU configuration dialog."""
+        gpuWindow = Toplevel(self)
+        gpuWindow.title('Refrainv - GPU Settings')
+        gpuWindow.configure(bg="#F0F0F0")
+        gpuWindow.geometry("500x350")
+        gpuWindow.resizable(False, False)
+        
+        # Set icon
+        if "nt" in name:
+            gpuWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        else:
+            gpuWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+        
+        # Title
+        Label(gpuWindow, text="GPU/CUDA Configuration", font=("Arial", 14, "bold"), bg="#F0F0F0").pack(pady=10)
+        
+        # Status frame
+        status_frame = Frame(gpuWindow, bg="#F0F0F0", relief="sunken", bd=2)
+        status_frame.pack(pady=10, padx=20, fill="x")
+        
+        # CUDA availability status
+        cuda_info = get_cuda_info()
+        Label(status_frame, text="CUDA Status:", font=("Arial", 11, "bold"), bg="#F0F0F0").pack(anchor="w", padx=10, pady=5)
+        
+        status_color = "green" if self.cuda_available else "red"
+        status_text = "Available" if self.cuda_available else "Not Available"
+        Label(status_frame, text=f"• {status_text}", font=("Arial", 10), bg="#F0F0F0", fg=status_color).pack(anchor="w", padx=20)
+        
+        # Device info
+        if self.cuda_available:
+            device_info = gpu_config.get_device_info()
+            Label(status_frame, text="• Device Info:", font=("Arial", 10), bg="#F0F0F0").pack(anchor="w", padx=20)
+            if isinstance(device_info, dict):
+                Label(status_frame, text=f"  - Name: {device_info['name']}", font=("Arial", 9), bg="#F0F0F0").pack(anchor="w", padx=30)
+                Label(status_frame, text=f"  - Compute Capability: {device_info['compute_capability']}", font=("Arial", 9), bg="#F0F0F0").pack(anchor="w", padx=30)
+                Label(status_frame, text=f"  - Total Memory: {device_info['total_memory']}", font=("Arial", 9), bg="#F0F0F0").pack(anchor="w", padx=30)
+        else:
+            Label(status_frame, text=f"• {cuda_info}", font=("Arial", 9), bg="#F0F0F0", fg="red", wraplength=440).pack(anchor="w", padx=20, pady=5)
+        
+        # Current GPU setting
+        current_frame = Frame(gpuWindow, bg="#F0F0F0")
+        current_frame.pack(pady=10, padx=20, fill="x")
+        
+        Label(current_frame, text="Current Setting:", font=("Arial", 11, "bold"), bg="#F0F0F0").pack(anchor="w")
+        current_status = "Enabled" if self.gpu_enabled else "Disabled"
+        current_color = "green" if self.gpu_enabled else "gray"
+        Label(current_frame, text=f"GPU Acceleration: {current_status}", font=("Arial", 10), bg="#F0F0F0", fg=current_color).pack(anchor="w", padx=20, pady=5)
+        
+        # Control buttons
+        button_frame = Frame(gpuWindow, bg="#F0F0F0")
+        button_frame.pack(pady=15)
+        
+        def enable_gpu():
+            if not self.cuda_available:
+                messagebox.showwarning("Refrainv", "CUDA is not available on this system.\n\nTo enable GPU support:\n1. Install CUDA toolkit\n2. Install CuPy: pip install cupy-cuda11x\n   (replace 11x with your CUDA version)")
+                return
+            
+            if gpu_config.enable_gpu():
+                self.gpu_enabled = True
+                messagebox.showinfo("Refrainv", "GPU acceleration enabled!\n\nThe inversion process will now use CUDA when possible.")
+                gpuWindow.destroy()
+            else:
+                messagebox.showerror("Refrainv", "Failed to enable GPU acceleration.")
+        
+        def disable_gpu():
+            gpu_config.disable_gpu()
+            self.gpu_enabled = False
+            messagebox.showinfo("Refrainv", "GPU acceleration disabled.\n\nThe inversion process will use CPU only.")
+            gpuWindow.destroy()
+        
+        # Enable/Disable buttons
+        if self.cuda_available:
+            if not self.gpu_enabled:
+                Button(button_frame, text="Enable GPU", font=("Arial", 11, "bold"), 
+                      bg="#228B22", fg="white", width=15, command=enable_gpu).pack(side="left", padx=5)
+            else:
+                Button(button_frame, text="Disable GPU", font=("Arial", 11, "bold"), 
+                      bg="#DC143C", fg="white", width=15, command=disable_gpu).pack(side="left", padx=5)
+        
+        Button(button_frame, text="Close", font=("Arial", 11), 
+              bg="#555555", fg="white", width=15, command=gpuWindow.destroy).pack(side="left", padx=5)
+        
+        # Information text
+        info_frame = Frame(gpuWindow, bg="#F0F0F0")
+        info_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        
+        info_text = """Note: GPU acceleration can significantly speed up 
+the inversion process for large datasets. However, 
+it requires a CUDA-compatible GPU and properly 
+configured CUDA drivers."""
+        
+        Label(info_frame, text=info_text, font=("Arial", 9), bg="#F0F0F0", 
+              justify="left", wraplength=450).pack(anchor="w")
+        
+        gpuWindow.tkraise()
     
     def reset(self):
 
@@ -475,6 +583,10 @@ class Refrainv(Tk):
         self.startModelPath = None
         self.velModel = None
         self.__dict__.pop('tomostandards',None)
+        
+        # GPU configuration
+        self.gpu_enabled = False
+        self.cuda_available = is_cuda_available()
     
     def kill(self):
 
@@ -1635,6 +1747,10 @@ class Refrainv(Tk):
                 if self.tomoPlot:
                     self.clearTomoPlot()
                 
+                # Notify user about GPU usage
+                if self.gpu_enabled:
+                    messagebox.showinfo("Refrainv", "GPU acceleration is enabled.\n\nThe inversion will use CUDA for accelerated computations.")
+                
                 start_timing = datetime.now()    
                 
                 maxDepth = float(maxDepth_entry.get())
@@ -1768,7 +1884,10 @@ class Refrainv(Tk):
                 x_grid = linspace(min(x), max(x), nx)
                 y_grid = linspace(min(z), max(z), ny)
                 xi,zi = meshgrid(x_grid,y_grid)
-                vi = griddata((x, z), v,(xi,zi), method = 'linear')
+                
+                # Use GPU-accelerated griddata if GPU is enabled
+                from gpu_utils import accelerate_griddata
+                vi = accelerate_griddata((x, z), v, (xi, zi), method='linear', use_gpu=self.gpu_enabled)
 
                 nlevels = int(nlevels_entry.get())
                 

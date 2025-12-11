@@ -282,5 +282,7 @@ dependencies:
     - shapely==1.8.2
     - sqlalchemy==1.4.39
     - trimesh==3.12.6
+    # Optional: For GPU/CUDA acceleration (uncomment and install appropriate version)
+    # - cupy-cuda11x  # Replace 11x with your CUDA version (e.g., 117 for CUDA 11.7)
 prefix: C:\Users\Riedel\.conda\envs\pg126
 
