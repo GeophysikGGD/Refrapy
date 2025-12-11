@@ -42,22 +42,22 @@ def test_gpu_config():
     print("=" * 60)
     
     # Test initial state
-    assert gpu_config.is_gpu_enabled() == False, "GPU should be disabled by default"
+    assert not gpu_config.is_gpu_enabled(), "GPU should be disabled by default"
     print("✓ GPU disabled by default")
     
     # Test enable (will fail if CUDA not available)
     result = gpu_config.enable_gpu()
     if is_cuda_available():
-        assert result == True, "GPU enable should succeed when CUDA is available"
-        assert gpu_config.is_gpu_enabled() == True, "GPU should be enabled"
+        assert result, "GPU enable should succeed when CUDA is available"
+        assert gpu_config.is_gpu_enabled(), "GPU should be enabled"
         print("✓ GPU enabled successfully")
     else:
-        assert result == False, "GPU enable should fail when CUDA is not available"
+        assert not result, "GPU enable should fail when CUDA is not available"
         print("✓ GPU enable correctly fails without CUDA")
     
     # Test disable
     gpu_config.disable_gpu()
-    assert gpu_config.is_gpu_enabled() == False, "GPU should be disabled"
+    assert not gpu_config.is_gpu_enabled(), "GPU should be disabled"
     print("✓ GPU disabled successfully")
     
     print("✅ GPU configuration test passed\n")

@@ -215,6 +215,8 @@ def accelerate_matrix_operations(matrix, operation='inv', use_gpu=False):
             return np.linalg.inv(matrix)
         elif operation == 'eig':
             return np.linalg.eig(matrix)
+        else:
+            raise ValueError(f"Unknown operation: {operation}")
 
 
 # Global GPU configuration instance
