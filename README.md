@@ -8,6 +8,8 @@
 
 [Using Refrainv to calculate velocity models](#refrainv)
 
+[GPU/CUDA Support for faster inversions](#gpu-cuda-support)
+
 [Have a question or found a problem?](#reporting-errors-and-asking-questions)
 
 [Citing Refrapy](#citation)
@@ -86,6 +88,38 @@ The Refrainv program is used to run a time-terms and a traveltimes tomography in
 
 ### Video tutorial - Calculate velocity models from data inversion
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/rOJjxoc2cbU/0.jpg)](https://www.youtube.com/watch?v=rOJjxoc2cbU)
+
+## GPU CUDA Support
+
+Refrapy now supports GPU acceleration using NVIDIA CUDA for faster inversion computations. This is especially beneficial for:
+- Large datasets with high-resolution meshes
+- Batch inversions with multiple parameter combinations
+- High-resolution grid interpolation for visualization
+
+### Quick Setup
+
+1. **Install CUDA Toolkit** from [NVIDIA](https://developer.nvidia.com/cuda-downloads)
+2. **Install CuPy** (must match your CUDA version):
+   ```bash
+   pip install cupy-cuda11x  # Replace 11x with your CUDA version
+   ```
+3. **Enable GPU in Refrapy**: Go to `Settings → GPU Settings` and click "Enable GPU"
+
+### Requirements
+- NVIDIA GPU with CUDA support
+- CUDA Toolkit 11.0+
+- CuPy package
+
+📚 **Documentation**:
+- [5-Minute Quick Start](GPU_QUICKSTART.md) - Fast setup guide
+- [Complete Setup Guide](GPU_SETUP.md) - Detailed instructions, troubleshooting, and performance info
+
+🧪 **Test Your Setup**:
+```bash
+python test_gpu_integration.py
+```
+
+**Note**: GPU support is optional. Refrapy works perfectly fine on CPU if you don't have a CUDA-compatible GPU.
 
 ## Reporting errors and asking questions
 
