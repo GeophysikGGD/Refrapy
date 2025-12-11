@@ -110,7 +110,14 @@ Refrapy now supports GPU acceleration using NVIDIA CUDA for faster inversion com
 - CUDA Toolkit 11.0+
 - CuPy package
 
-For detailed setup instructions, troubleshooting, and performance information, see [GPU_SETUP.md](GPU_SETUP.md).
+📚 **Documentation**:
+- [5-Minute Quick Start](GPU_QUICKSTART.md) - Fast setup guide
+- [Complete Setup Guide](GPU_SETUP.md) - Detailed instructions, troubleshooting, and performance info
+
+🧪 **Test Your Setup**:
+```bash
+python test_gpu_integration.py
+```
 
 **Note**: GPU support is optional. Refrapy works perfectly fine on CPU if you don't have a CUDA-compatible GPU.
 

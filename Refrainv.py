@@ -33,7 +33,7 @@ import pandas as pd
 import json 
 #own modules
 from dtreader import dtreader
-from gpu_utils import gpu_config, is_cuda_available, get_cuda_info
+from gpu_utils import gpu_config, is_cuda_available, get_cuda_info, accelerate_griddata
 
 
 class Refrainv(Tk):
@@ -1886,7 +1886,6 @@ configured CUDA drivers."""
                 xi,zi = meshgrid(x_grid,y_grid)
                 
                 # Use GPU-accelerated griddata if GPU is enabled
-                from gpu_utils import accelerate_griddata
                 vi = accelerate_griddata((x, z), v, (xi, zi), method='linear', use_gpu=self.gpu_enabled)
 
                 nlevels = int(nlevels_entry.get())

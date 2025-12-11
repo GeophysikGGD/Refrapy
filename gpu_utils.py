@@ -158,23 +158,12 @@ def accelerate_griddata(points, values, xi, method='linear', use_gpu=False):
     
     # For GPU acceleration, we can use CuPy for certain operations
     # Note: Full griddata implementation on GPU is complex
-    # For now, we'll accelerate the linear algebra parts
+    # A complete GPU-based triangulation would be needed for full acceleration
+    # For now, we fall back to CPU with a warning
     try:
         from scipy.interpolate import griddata as scipy_griddata
-        
-        # Convert to GPU arrays for computation
-        points_gpu = cp.asarray(points)
-        values_gpu = cp.asarray(values)
-        
-        # For linear interpolation, we can accelerate the matrix operations
-        if method == 'linear':
-            # This is a simplified acceleration - the full implementation
-            # would require a complete GPU-based triangulation
-            # For now, we fall back to CPU with a warning
-            warnings.warn("Full GPU griddata not yet implemented. Using CPU.")
-            return scipy_griddata(points, values, xi, method=method)
-        else:
-            return scipy_griddata(points, values, xi, method=method)
+        warnings.warn("Full GPU griddata not yet implemented. Using CPU for interpolation.")
+        return scipy_griddata(points, values, xi, method=method)
     
     except Exception as e:
         warnings.warn(f"GPU griddata failed: {e}. Falling back to CPU.")
@@ -205,7 +194,8 @@ def accelerate_matrix_operations(matrix, operation='inv', use_gpu=False):
             return np.linalg.inv(matrix)
         elif operation == 'eig':
             return np.linalg.eig(matrix)
-        # Add more operations as needed
+        else:
+            raise ValueError(f"Unknown operation: {operation}")
     
     try:
         matrix_gpu = cp.asarray(matrix)
